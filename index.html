@@ -319,7 +319,9 @@ body[data-mode=overview] .foot .hint{display:none}
   .seg button[aria-pressed=true].o{background:rgba(30,42,54,.68)}
   .card{--peek:224px;left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:var(--peek);overflow:hidden;padding:0 16px 14px;border-radius:20px;transform:translateY(24px);transition:opacity .35s,transform .35s,background .4s,color .4s,max-height .28s ease}
   .card.open{max-height:46%;overflow:auto}
-  .card.fade{opacity:.35;pointer-events:none}
+  .topbar{transition:opacity .35s}
+  body.maphold .card,body.maphold .topbar{opacity:.35;pointer-events:none}
+  body.maphold .topbar>*{pointer-events:none}
   .card .x{top:8px;right:10px}
   .card:not(.open) .lead{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   .grab{display:flex;flex-direction:column;align-items:center;gap:3px;width:calc(100% + 32px);margin:0 -16px;padding:7px 0 5px;border:0;background:transparent;color:var(--ink-2);font-size:11px;font-weight:700;line-height:1.2;cursor:pointer;touch-action:none}
@@ -3573,7 +3575,7 @@ canvas.addEventListener('pointerup', (e) => {
 canvas.addEventListener('pointermove', (e) => {
   if (e.buttons) {
     // a real drag or pinch (not a tap) clears the view: the sheet folds away and fades until the finger lifts
-    if (interacting && cardOn && isNarrow() && down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) { if (sheetOpen) setSheet(false); card.classList.add('fade'); }
+    if (interacting && cardOn && isNarrow() && down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) { if (sheetOpen) setSheet(false); document.body.classList.add('maphold'); }
     return;
   }
   ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
@@ -3596,7 +3598,7 @@ const AUDIO = {
   // has to stop it directly instead of leaving it to the fade in update()
   away: new Set(), lastTick: 0,
   leave(why) { this.away.add(why); this.musicVol = 0; if (this.music) this.music.pause(); if (this.ctx) this.ctx.suspend().catch(() => {}); },
-  back(why) { this.away.delete(why); if (!this.away.size && this.ctx) this.ctx.resume().catch(() => {}); },
+  back(why) { if (this.away.delete(why) && !this.away.size && this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); },
   start() {
     if (this.ctx) return;
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -3739,18 +3741,21 @@ soundBtn();
 // the first tap/key anywhere unlocks audio (browsers require a gesture)
 if (window.__actx) AUDIO.start(); else window.__onUnlock = () => AUDIO.start();
 // In-app browsers (LINE and the like) do not all report leaving the same way, so listen to every signal
-document.addEventListener('visibilitychange', () => { if (document.hidden) AUDIO.leave('hidden'); else { AUDIO.back('hidden'); AUDIO.back('blur'); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) AUDIO.leave('hidden'); else AUDIO.back('hidden'); });
 addEventListener('pagehide', () => AUDIO.leave('page'));
 addEventListener('pageshow', () => AUDIO.back('page'));
 document.addEventListener('freeze', () => AUDIO.leave('page'));
 document.addEventListener('resume', () => AUDIO.back('page'));
-if (matchMedia('(pointer: coarse)').matches) {   // on a computer the page can stay visible beside another window
-  addEventListener('blur', () => AUDIO.leave('blur'));
-  addEventListener('focus', () => AUDIO.back('blur'));
-  addEventListener('pointerdown', () => AUDIO.back('blur'), true);
+// Last resort for webviews that report nothing: frames stop when the page is off screen. A busy moment
+// is not leaving, so this needs several on-time checks in a row with no frame between them
+{
+  let seen = 0, missed = 0, lastCheck = performance.now();
+  setInterval(() => {
+    const now = performance.now(), onTime = now - lastCheck < 900; lastCheck = now;
+    if (AUDIO.lastTick !== seen) { seen = AUDIO.lastTick; missed = 0; return; }
+    if (onTime && AUDIO.lastTick && ++missed >= 5 && !AUDIO.away.has('frames')) AUDIO.leave('frames');
+  }, 500);
 }
-// last resort for webviews that report nothing: frames stop when the page is off screen
-setInterval(() => { if (AUDIO.lastTick && performance.now() - AUDIO.lastTick > 2000) AUDIO.leave('frames'); }, 500);
 
 /* =========================================================
    Atmosphere & loop
@@ -3787,7 +3792,7 @@ let nextStrike = 2.5;
 const DPR_MAX = Math.min(devicePixelRatio, innerWidth <= 720 ? 1.5 : 2);
 let dprNow = DPR_MAX, slowFor = 0, idleFor = 0, emaDt = 1 / 60, interacting = false;
 controls.addEventListener('start', () => { interacting = true; });
-controls.addEventListener('end', () => { interacting = false; card.classList.remove('fade'); });
+controls.addEventListener('end', () => { interacting = false; document.body.classList.remove('maphold'); });
 const setDpr = (d) => { dprNow = d; renderer.setPixelRatio(d); renderer.setSize(innerWidth, innerHeight, false); };
 function adaptQuality(raw) {
   emaDt += (Math.min(raw, 0.25) - emaDt) * 0.1;
