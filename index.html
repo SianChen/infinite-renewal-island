@@ -392,7 +392,7 @@ body[data-mode=overview] .foot .hint{display:none}
   <button class="ov-card s" data-act="shen"><b>☀ 沈伯洋路線</b><span>🐾 薩摩耶全程陪伴：先換屋、再都更，6 站走到完工，然後無限循環</span><small class="ovp">都更進度：✔ 已更新 <em id="pSb">0</em>・🏗 施工中 <em id="pSc">0</em> 棟<span class="gc-only">・<em id="pS">0</em> 人次走完</span><i class="meter"><i id="pSm"></i><i id="pSm2" class="b"></i></i></small><em>跟著薩摩耶出發 →</em></button>
   <button class="ov-card c" data-act="now"><b>⛈ 現況路線</b><span>整合、排隊、中繼宅：風雨裡的斷橋，走不到完工</span><small class="ovp">⛈ 完工 <em>0</em> 棟<span class="gc-only">・<em id="pN">0</em> 位住戶卡在斷橋</span><i class="meter"><i></i></i></small><em>走走看 →</em></button>
   <button class="ov-doc" data-act="policy">📄 無限都更政策詳述（沈伯洋官網整理）</button>
-  <p class="ovnote"><span>含起始示意（已更新 16、施工中 10 棟），其餘依本站使用者互動統計增加，非真實都更數據<span class="gc-only">，約每 4 小時更新</span>。<span id="pK"></span></span></p>
+  <p class="ovnote"><span>含起始示意（已更新 16、施工中 10 棟），其餘依本站使用者互動統計增加，非真實都更數據<span class="gc-only">，約每小時更新</span>。<span id="pK"></span></span></p>
 </div>
 
 <div id="intro" class="intro">
@@ -557,6 +557,10 @@ const FONT = '"PingFang TC","Noto Sans TC","Microsoft JhengHei","Noto Sans CJK T
    ========================================================= */
 const GC_CODE = ((window.SITE_CONFIG && window.SITE_CONFIG.goatcounter) || '').trim();
 const MUSIC_SRC = (window.SITE_CONFIG && window.SITE_CONFIG.music) || 'audio/shen-bgm.mp3';
+const hourStart = () => Math.floor(Date.now() / 3600e3) * 3600e3;
+// GoatCounter caches public counts for hours, but each `start` date gets its own cache entry.
+// A different pre-launch date each hour keeps counts about an hour old without changing the totals.
+const counterStart = () => new Date(Date.UTC(2026, 10, 1) - (hourStart() / 3600e3 % 720) * 864e5).toISOString().slice(0, 10);
 const GC = {
   ready: false, q: [],
   init() {
@@ -575,7 +579,7 @@ const GC = {
   async counter(path) {
     if (!GC_CODE) return null;
     try {
-      const r = await fetch(`https://${GC_CODE}.goatcounter.com/counter/${encodeURIComponent(path)}.json`);
+      const r = await fetch(`https://${GC_CODE}.goatcounter.com/counter/${encodeURIComponent(path)}.json?start=${counterStart()}`);
       if (r.status === 404) return 0;
       if (!r.ok) return null;
       const j = await r.json();
@@ -2899,10 +2903,9 @@ await tick(0.74, '住戶上島中…');
 /* =========================================================
    City-renewal progress (GoatCounter-linked)
    ========================================================= */
-const PROG = { shen: 0, started: 0, now: 0, care: 0, loaded: false };
-// "第 X 批": everyone's completions on GoatCounter plus yours that the (cached) count can't show yet
-let sessionDone = 0;
-const batchNo = () => PROG.shen + Math.max(localDelta('icity-shen'), sessionDone);
+const PROG = { shen: 0, started: 0, now: 0, care: 0, loaded: false, asOf: hourStart() };
+// "第 X 批": everyone's completions on GoatCounter, plus yours if the current count can't include it yet
+const batchNo = () => PROG.shen + localDelta('icity-shen');
 let basinTag = null;
 const STEPS_K = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
 function bucket(n, cap) { const k = STEPS_K.find(k => Math.ceil(n / k) <= cap) || STEPS_K[STEPS_K.length - 1]; return { k, units: Math.min(cap, Math.ceil(n / k)) }; }
@@ -2910,11 +2913,14 @@ function bucket(n, cap) { const k = STEPS_K.find(k => Math.ceil(n / k) <= cap) |
 const BASE_DONE = 16, BASE_BUILD = 10, LINEAR_DONE = 80;
 // one building per household at first, then ever more slowly: the count only rises and never runs out of slots
 const saturate = (n, room, linear) => n <= linear ? n : linear + (room - linear) * (n - linear) / (n - 2 * linear + room);
-const FRESH = 4 * 3600e3;
-const localDelta = (key) => { const ts = +(LS.get(key) || 0); return ts && Date.now() - ts < FRESH ? 1 : 0; };
+// 1 while this visitor's own milestone is too recent to be in the count the page last read
+const localDelta = (key) => { const ts = +(LS.get(key) || 0); return ts && ts >= PROG.asOf ? 1 : 0; };
 const fmtN = (n) => n.toLocaleString('zh-TW');
+// GoatCounter counts a visitor once per 8-hour session, so repeats inside that window add nothing
+const SESSION_MS = 8 * 3600e3;
 function markDone(key) {
-  if (localDelta(key)) return null;
+  const ts = +(LS.get(key) || 0);
+  if (ts && Date.now() - ts < SESSION_MS) return null;
   LS.set(key, String(Date.now()));
   return applyProgress(true);
 }
@@ -2946,6 +2952,7 @@ async function loadProgress() {
   if (a != null) PROG.shen = a;
   if (st != null) PROG.started = st;
   if (b != null) PROG.now = b;
+  PROG.asOf = hourStart();
   PROG.loaded = true;
   applyProgress(true);
 }
@@ -3284,7 +3291,7 @@ function cardData(kind) {
   if (kind === 'pool') return { ...TEXT.pool };
   if (kind === 'shen') {
     const s = state.step.shen, id = ROUTE.shen[s];
-    const d = { ...TEXT[id], kicker: s === 0 ? `☀ 沈伯洋路線・起點${state.round > 1 ? `（第 ${fmtN(batchNo())} 批）` : ''}` : `☀ 沈伯洋路線・第 ${s} 站 / 6` };
+    const d = { ...TEXT[id], kicker: s === 0 ? `☀ 沈伯洋路線・起點${state.round > 1 ? `（第 ${fmtN(batchNo())} 批${state.round > 2 ? `・你的第 ${state.round} 輪` : ''}）` : ''}` : `☀ 沈伯洋路線・第 ${s} 站 / 6` };
     if (s === 0 && state.round > 1) Object.assign(d, { batch: true, title: `第 ${fmtN(batchNo())} 批住戶上島`, lead: '上一輪完工的住宅，成了這一輪的交換住宅。又一棟老公寓的鄰居，也能先換屋、再都更。' });
     return d;
   }
@@ -3323,7 +3330,7 @@ function showCard(kind) {
   const calc = d.calc ? `<div class="calc"><div class="calc-top"><span>舊屋估價（範例）</span><b>1,500 萬</b></div><div class="calc-lbl" style="margin-top:8px"><span>選擇的新家</span><b id="cv">1,200 萬</b></div><input id="cr" type="range" min="900" max="2100" step="50" value="1200" aria-label="選擇新家價位"><div class="calc-out" id="co"></div></div>` : '';
   const cmp = d.compare ? '<div class="compare"><b>同一棟老公寓，在另一條路上：</b><ul><li>不住中繼宅，一輩子只搬一次</li><li>公平估價，換屋或換權、多退少補</li><li>完工住宅再投入，下一輪接著來</li></ul></div>' : '';
   const quote = d.quote ? `<blockquote>${d.quote}<cite>${d.cite}</cite></blockquote>` : '';
-  const batch = d.batch ? `<p class="src">「第 ${fmtN(batchNo())} 批」＝${GC_CODE ? '本站所有訪客累計走完全程的次數（GoatCounter 統計，約每 4 小時更新，加上你剛完成的）' : '你在本站走完全程的次數（網站尚未連上統計）'}</p>` : '';
+  const batch = d.batch ? `<p class="src">「第 ${fmtN(batchNo())} 批」＝${GC_CODE ? '本站訪客累計走完全程的人次（GoatCounter 統計，約每小時更新，加上你剛完成的；幾小時內重複走只算一次）' : '你在本站走完全程的次數（網站尚未連上統計）'}</p>` : '';
   card.className = 'card theme-' + (kind === 'now' ? 'now' : 'shen') + (cardOn ? ' show' : '') + (sheetOpen ? ' open' : '');
   cardOn = true;
   card.innerHTML = `<button class="x" data-act="overview" aria-label="回到全景">×</button><button class="grab" data-act="sheet" aria-expanded="${sheetOpen}"><i></i><span class="gc">︿ 看完整說明</span><span class="go">﹀ 收合</span></button><span class="kicker">${d.kicker}</span><h2>${d.title}</h2><p class="lead">${d.lead}</p>${quote}${pts ? `<ul>${pts}</ul>` : ''}${calc}${cmp}${batch}${src}${progressHTML(kind)}${navHTML(kind)}`;
@@ -3428,11 +3435,10 @@ function arrive(route) {
   }
   if (id === 's5') groundbreak();
   if (id === 's6') {
-    if (state.doneRound !== state.round) { state.doneRound = state.round; sessionDone++; }
     celebrate(); riseTowers();
     const ch = markDone('icity-shen');
     if (ch && ch.toNew.length) { toast(`🎉 <span class="wide">薩摩耶陪你走到</span>完工！多了 <b>1 棟新大樓</b>（已更新 ${fmtN(PROG.done)} 棟）`); RENEW.flash(ch.toNew[ch.toNew.length - 1]); }
-    else toast('🎉 <span class="wide">薩摩耶陪你走到</span>完工了！這一輪也會計入<span class="wide">本站的</span>更新進度');
+    else toast('🎉 <span class="wide">薩摩耶陪你走到</span>完工了！你已計入<span class="wide">本站的</span>更新進度');
   }
 }
 function groundbreak() {
