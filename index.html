@@ -98,6 +98,7 @@ body[data-mode=now] .seg button[aria-pressed=true].c{background:#4b5868;color:#f
 .tag.cur.shen,.tag.cur.home,.tag.cur.pool{box-shadow:0 0 0 3px var(--orange),0 6px 18px rgba(20,40,60,.25)}
 .tag.cur.now{box-shadow:0 0 0 3px #9fb4cc,0 6px 18px rgba(0,0,0,.35)}
 .tag.note{pointer-events:none;background:rgba(255,243,209,.94);color:#7a5200;font-size:12px;padding:4px 11px;font-weight:700}
+.tag .ls{display:none}
 .tag.off,.bubble.off{display:none}
 .bubble{position:absolute;left:0;top:0;z-index:3;pointer-events:none;background:#fff;color:var(--ink);padding:7px 13px;border-radius:16px;font-size:14px;font-weight:700;white-space:nowrap;box-shadow:0 6px 18px rgba(20,40,60,.22);will-change:transform}
 .bubble::after{content:"";position:absolute;left:50%;bottom:-5px;width:11px;height:11px;transform:translateX(-50%) rotate(45deg);background:inherit;border-radius:2px;z-index:-1}
@@ -134,6 +135,7 @@ body[data-mode=now] .seg button[aria-pressed=true].c{background:#4b5868;color:#f
 .card{position:fixed;right:20px;top:88px;width:min(400px,calc(100vw - 40px));max-height:calc(100% - 108px);overflow:auto;background:var(--paper);border-radius:24px;padding:22px 22px 18px;box-shadow:0 18px 50px rgba(20,40,60,.2);z-index:6;opacity:0;transform:translateX(24px);pointer-events:none;transition:opacity .35s,transform .35s,background .4s,color .4s;scrollbar-width:thin}
 .card.show{opacity:1;transform:none;pointer-events:auto}
 .card.moving{opacity:.55;pointer-events:none}
+.grab{display:none}
 .card .x{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(30,42,54,.07);color:inherit;font-size:20px;line-height:1;cursor:pointer}
 .kicker{display:inline-block;font-size:12px;font-weight:900;letter-spacing:.08em;padding:5px 11px;border-radius:999px;background:var(--orange-soft);color:var(--orange-deep);margin-right:40px}
 .card h2{margin:12px 0 8px;font-size:25px;line-height:1.3;font-weight:900;letter-spacing:.02em}
@@ -307,18 +309,40 @@ body[data-mode=overview] .foot .hint{display:none}
   .logo{width:34px;height:34px;font-size:22px}
   .brand h1{font-size:16px}.brand p{font-size:11px}
   .brand>div:not(.logo){flex:1;min-width:0}
-  .seg button{flex:1;padding:8px 6px;font-size:13px}
-  .card{left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:46%;padding:16px 16px 14px;border-radius:20px;transform:translateY(24px)}
+  .seg{background:rgba(255,250,241,.4);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 2px 10px rgba(20,40,60,.08)}
+  body[data-mode=now] .seg{background:rgba(27,34,44,.42)}
+  .seg button{flex:1;padding:8px 6px;font-size:13px;color:var(--ink);text-shadow:0 0 6px rgba(255,250,241,.95)}
+  body[data-mode=now] .seg button{color:var(--storm-ink);text-shadow:0 0 6px rgba(15,20,28,.95)}
+  .seg button[aria-pressed=true]{text-shadow:0 1px 3px rgba(20,30,40,.45)}
+  .seg button[aria-pressed=true].s{background:rgba(232,112,47,.68)}
+  body[data-mode=now] .seg button[aria-pressed=true].c{background:rgba(219,227,236,.34)}
+  .seg button[aria-pressed=true].o{background:rgba(30,42,54,.68)}
+  .card{--peek:224px;left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:var(--peek);overflow:hidden;padding:0 16px 14px;border-radius:20px;transform:translateY(24px);transition:opacity .35s,transform .35s,background .4s,color .4s,max-height .28s ease}
+  .card.open{max-height:46%;overflow:auto}
+  .card.fade{opacity:.35;pointer-events:none}
+  .card .x{top:8px;right:10px}
+  .card:not(.open) .lead{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .grab{display:flex;flex-direction:column;align-items:center;gap:3px;width:calc(100% + 32px);margin:0 -16px;padding:7px 0 5px;border:0;background:transparent;color:var(--ink-2);font-size:11px;font-weight:700;line-height:1.2;cursor:pointer;touch-action:none}
+  .grab i{display:block;width:36px;height:4px;border-radius:2px;background:currentColor;opacity:.4}
+  .grab .go,.card.open .grab .gc{display:none}
+  .card.open .grab .go{display:inline}
+  .theme-now .grab{color:var(--storm-mute)}
   .card h2{font-size:21px;margin:10px 0 6px}
   .card .lead{font-size:14px}
   .nav{bottom:-14px;margin:0 -16px -14px;padding:10px 16px 14px;border-radius:0 0 20px 20px}
   .tag.note{display:none}
+  body[data-mode=overview] .tag.isl{font-size:11px;padding:2px 7px 2px 2px;gap:3px}
+  body[data-mode=overview] .tag.isl .n{min-width:18px;height:18px;padding:0 4px;font-size:11px}
+  body[data-mode=overview] .tag.isl .lf{display:none}
+  body[data-mode=overview] .tag.isl .ls{display:inline}
   .card li{font-size:13.5px}
   .ov{flex-direction:column;bottom:12px;gap:8px}
   .ov-card{padding:11px 14px}.ov-card span{display:none}
   .ovp{margin:2px 0 4px;font-size:12px}.ovp .meter{display:none}
   .ovnote{font-size:10px;margin:0}.ovnote>span{border-radius:10px}
-  .toast{top:118px;font-size:13px}
+  .toast{left:10px;right:10px;top:auto;width:fit-content;max-width:none;margin:0 auto;padding:8px 14px;border-radius:16px;font-size:13px;transform:translateY(8px)}
+  .toast.show{transform:none}
+  .toast .wide{display:none}
   .tag.basin{font-size:11px}
   .pchip{display:none}
   .intro-card{padding:24px 18px 14px}
@@ -544,12 +568,12 @@ const GC = {
       if (window.goatcounter && window.goatcounter.count) { clearInterval(iv); this.ready = true; this.q.splice(0).forEach(f => f()); }
       else if (++n > 150) clearInterval(iv);
     }, 200);
-    this.counter('TOTAL', true).then(c => { if (c != null) { const el = $('#visits'); el.querySelector('b').textContent = c.toLocaleString('zh-TW'); el.hidden = false; } });
+    this.counter(new URL(document.querySelector('link[rel="canonical"]')?.href || location.href).pathname).then(c => { if (c != null) { const el = $('#visits'); el.querySelector('b').textContent = c.toLocaleString('zh-TW'); el.hidden = false; } });
   },
-  async counter(path, raw = false) {
+  async counter(path) {
     if (!GC_CODE) return null;
     try {
-      const r = await fetch(`https://${GC_CODE}.goatcounter.com/counter/${raw ? path : encodeURIComponent(path)}.json`);
+      const r = await fetch(`https://${GC_CODE}.goatcounter.com/counter/${encodeURIComponent(path)}.json`);
       if (r.status === 404) return 0;
       if (!r.ok) return null;
       const j = await r.json();
@@ -577,6 +601,7 @@ const SRC = {
   pts:   ['公視：都更五箭議會質詢', 'https://news.pts.org.tw/article/626097'],
 };
 
+const SHORT = { home: '舊居', s1: '審議', s2: '估價', s3: '新家', s4: '新任務', s5: '重建', s6: '完工', pool: '屋源', c1: '同意書', c2: '排隊', c3: '萬箭', c4: '中繼宅', c5: '殭屍', c6: '完工？' };   // phone overview, where full names collide
 const LABEL = { home: '舊居・起點', s1: '審議快車道', s2: '公平估價所', s3: '循環新家', s4: '老屋新任務', s5: '原地重建', s6: '完工・無限循環', pool: '屋源島', c1: '同意書卡關', c2: '審議排隊', c3: '萬箭齊發', c4: '自找中繼宅', c5: '殭屍都更', c6: '完工？' };
 
 const TEXT = {
@@ -2880,7 +2905,9 @@ let basinTag = null;
 const STEPS_K = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
 function bucket(n, cap) { const k = STEPS_K.find(k => Math.ceil(n / k) <= cap) || STEPS_K[STEPS_K.length - 1]; return { k, units: Math.min(cap, Math.ceil(n / k)) }; }
 // a small illustrative head start so the basin already shows what renewal looks like
-const BASE_DONE = 16, BASE_BUILD = 10;
+const BASE_DONE = 16, BASE_BUILD = 10, LINEAR_DONE = 80;
+// one building per household at first, then ever more slowly: the count only rises and never runs out of slots
+const saturate = (n, room, linear) => n <= linear ? n : linear + (room - linear) * (n - linear) / (n - 2 * linear + room);
 const FRESH = 4 * 3600e3;
 const localDelta = (key) => { const ts = +(LS.get(key) || 0); return ts && Date.now() - ts < FRESH ? 1 : 0; };
 const fmtN = (n) => n.toLocaleString('zh-TW');
@@ -2893,17 +2920,16 @@ function applyProgress(animate = true) {
   const fin = PROG.shen + localDelta('icity-shen');
   const started = Math.max(PROG.started, PROG.shen) + localDelta('icity-start');
   const going = Math.max(0, started - fin);
-  const cap = RENEW.cap, free = Math.max(1, cap - BASE_DONE - BASE_BUILD);
-  const k = STEPS_K.find(k => Math.ceil(fin / k) + Math.ceil(going / k) <= free) || STEPS_K[STEPS_K.length - 1];
-  const done = Math.min(cap, BASE_DONE + Math.ceil(fin / k)), build = Math.min(cap - done, BASE_BUILD + Math.ceil(going / k)), old = cap - done - build;
+  const cap = RENEW.cap;
+  const done = BASE_DONE + Math.round(saturate(fin, cap - BASE_DONE, LINEAR_DONE)), build = Math.min(cap - done, BASE_BUILD + Math.round(saturate(going, 30, 15))), old = cap - done - build;
   const ch = RENEW.set(done, build, animate);
   const nTot = PROG.now + localDelta('icity-now'), bn = bucket(nTot, CROWD.cap);
   CROWD.set(bn.units);
   $('#pS').textContent = fmtN(fin); $('#pSb').textContent = fmtN(done); $('#pSc').textContent = fmtN(build); $('#pN').textContent = fmtN(nTot);
   $('#pSm').style.width = (done / cap * 100).toFixed(1) + '%'; $('#pSm2').style.width = (build / cap * 100).toFixed(1) + '%';
-  const ks = [k > 1 ? `每棟代表 ${k} 戶` : '', bn.k > 1 ? `等待人群每人代表 ${bn.k} 戶` : ''].filter(Boolean).join('；');
+  const ks = [fin > LINEAR_DONE ? `超過 ${LINEAR_DONE} 人次後，新增棟數會逐漸放慢` : '', bn.k > 1 ? `等待人群每人代表 ${bn.k} 戶` : ''].filter(Boolean).join('；');
   $('#pK').textContent = ks ? `（${ks}）` : '';
-  Object.assign(PROG, { fin, done, build, old, nTot, k });
+  Object.assign(PROG, { fin, done, build, old, nTot });
   if (basinTag) updateBasinTag();
   updateChip();
   // 關心都更的人數: everyone who reached at least one stop (either route), finished or not
@@ -2933,7 +2959,12 @@ function updateChip() {
 /* little notes that tell you what your own visit just changed */
 const toastEl = $('#toast');
 let toastT = 0;
-function toast(html) { AUDIO.chime(); toastEl.innerHTML = html; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 4600); }
+function toast(html) {
+  AUDIO.chime(); toastEl.innerHTML = html;
+  // on phones the strip between the top bar and the bottom card is all building, so sit on the card's top edge
+  toastEl.style.top = !isNarrow() ? '' : (cardOn ? card.offsetTop + card.offsetHeight - (sheetOpen ? Math.min(card.scrollHeight, innerHeight * 0.46) : card.offsetHeight) - toastEl.offsetHeight / 2 : topH + 8) + 'px';
+  toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 4600);
+}
 
 /* =========================================================
    Labels / bubbles
@@ -2952,7 +2983,7 @@ for (const id in ISL) {
   const num = id === 'home' ? '起' : id === 'pool' ? '屋' : id === 'c6' ? '?' : id.slice(1);
   const cls = { both: 'home', shen: 'shen', side: 'pool', now: 'now', ghost: 'ghost' }[I.route];
   const h = id === 's5' ? 7.6 : id === 's6' || id === 'c6' ? 7.2 : id.startsWith('c') ? 5.8 : 6.4;
-  islandTags[id] = addTag(`<span class="n">${num}</span>${LABEL[id]}`, new V3(I.x, h, I.z), cls, () => { GC.event('click-label-' + id, '點標籤：' + LABEL[id]); onIsland(id); });
+  islandTags[id] = addTag(`<span class="n">${num}</span><span class="lf">${LABEL[id]}</span><span class="ls">${SHORT[id]}</span>`, new V3(I.x, h, I.z), cls + ' isl', () => { GC.event('click-label-' + id, '點標籤：' + LABEL[id]); onIsland(id); });
   // while you stand on an island its name drops to the island's near shore, under the characters
   islandTags[id].home = islandTags[id].pos.clone(); islandTags[id].front = new V3(I.x, TOP + 0.35, I.z + APO + 0.9);
 }
@@ -3195,8 +3226,8 @@ const BOUNDS = [];
 for (const id in ISL) { const I = ISL[id]; for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; BOUNDS.push(new V3(I.x + Math.sin(a) * R, 0, I.z + Math.cos(a) * R)); } BOUNDS.push(new V3(I.x, 5, I.z)); }
 function overviewPose() {
   const portrait = innerWidth / innerHeight < 0.9;
-  const el = portrait ? 0.98 : 0.62, az = portrait ? -Math.PI / 2 : 0;
-  const t = new V3(0, 0, portrait ? 0 : 1), dir = new V3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+  const el = portrait ? 1.2 : 0.62;
+  const t = new V3(0, 0, portrait ? 14 : 1), dir = new V3(0, Math.sin(el), Math.cos(el));
   const cam = new THREE.PerspectiveCamera(camera.fov, innerWidth / innerHeight, 0.5, 2000);
   const bottom = isNarrow() ? (GC_CODE ? -0.4 : -0.5) : (GC_CODE ? -0.64 : -0.6), top = isNarrow() ? 0.62 : 0.8;
   let lo = 20, hi = 600;
@@ -3206,6 +3237,7 @@ function overviewPose() {
     const ok = BOUNDS.every(p => { const v = p.clone().project(cam); return Math.abs(v.x) < 0.95 && v.y < top && v.y > bottom; });
     if (ok) hi = mid; else lo = mid;
   }
+  controls.maxDistance = Math.max(240, hi * 1.1);   // tall narrow screens need to stand further back
   return { t, p: t.clone().addScaledVector(dir, hi) };
 }
 
@@ -3213,7 +3245,7 @@ let vo = { dx: 0, dy: 0 };
 const card = $('#card'), topbar = $('.topbar');
 // the view shifts to make room for the card; the shift depends only on the layout (never on the
 // card's animated position or its content height), so the camera stays still once it arrives
-let cardOn = false, topH = 0;
+let cardOn = false, topH = 0, sheetOpen = true;
 const measureTop = () => { topH = topbar.getBoundingClientRect().bottom; };
 function targetOffset() {
   if (!cardOn) return { dx: 0, dy: 0 };
@@ -3290,9 +3322,9 @@ function showCard(kind) {
   const cmp = d.compare ? '<div class="compare"><b>同一棟老公寓，在另一條路上：</b><ul><li>不住中繼宅，一輩子只搬一次</li><li>公平估價，換屋或換權、多退少補</li><li>完工住宅再投入，下一輪接著來</li></ul></div>' : '';
   const quote = d.quote ? `<blockquote>${d.quote}<cite>${d.cite}</cite></blockquote>` : '';
   const batch = d.batch ? `<p class="src">「第 ${fmtN(batchNo())} 批」＝${GC_CODE ? '本站所有訪客累計走完全程的次數（GoatCounter 統計，約每 4 小時更新，加上你剛完成的）' : '你在本站走完全程的次數（網站尚未連上統計）'}</p>` : '';
-  card.className = 'card theme-' + (kind === 'now' ? 'now' : 'shen') + (cardOn ? ' show' : '');
+  card.className = 'card theme-' + (kind === 'now' ? 'now' : 'shen') + (cardOn ? ' show' : '') + (sheetOpen ? ' open' : '');
   cardOn = true;
-  card.innerHTML = `<button class="x" data-act="overview" aria-label="回到全景">×</button><span class="kicker">${d.kicker}</span><h2>${d.title}</h2><p class="lead">${d.lead}</p>${quote}${pts ? `<ul>${pts}</ul>` : ''}${calc}${cmp}${batch}${src}${progressHTML(kind)}${navHTML(kind)}`;
+  card.innerHTML = `<button class="x" data-act="overview" aria-label="回到全景">×</button><button class="grab" data-act="sheet" aria-expanded="${sheetOpen}"><i></i><span class="gc">︿ 看完整說明</span><span class="go">﹀ 收合</span></button><span class="kicker">${d.kicker}</span><h2>${d.title}</h2><p class="lead">${d.lead}</p>${quote}${pts ? `<ul>${pts}</ul>` : ''}${calc}${cmp}${batch}${src}${progressHTML(kind)}${navHTML(kind)}`;
   card.scrollTop = 0;
   requestAnimationFrame(() => card.classList.add('show'));
   if (d.calc) {
@@ -3303,6 +3335,17 @@ function showCard(kind) {
   }
 }
 function hideCard() { cardOn = false; card.classList.remove('show'); }
+// phones: the card is a bottom sheet. Open at a stop, collapsed while walking or while the map is being moved
+function setSheet(open) {
+  sheetOpen = open; card.classList.toggle('open', open);
+  card.querySelector('.grab')?.setAttribute('aria-expanded', String(open));
+  if (!open) card.scrollTop = 0;
+}
+let grabY = null, grabSwiped = false;
+card.addEventListener('pointerdown', (e) => { if (e.target.closest('.grab')) { grabY = e.clientY; grabSwiped = false; } });
+card.addEventListener('pointermove', (e) => { if (grabY != null && Math.abs(e.clientY - grabY) > 18) { setSheet(e.clientY < grabY); grabSwiped = true; grabY = null; } });
+card.addEventListener('pointerup', () => { grabY = null; });
+card.addEventListener('pointercancel', () => { grabY = null; });
 
 function walkLeg(route, a, b, fast) {
   const speed = fast ? 8 : 4.4;
@@ -3318,8 +3361,8 @@ async function goStep(route, target) {
   if (state.view !== route) setView(route);
   target = clamp(target, 0, 6);
   const cur = route === 'now' && state.blocked ? 6 : state.step[route];
-  if (target === cur) { const f = route === 'now' && state.blocked ? focusBlocked() : focusOf(ROUTE[route][cur]); flyTo(f.t, f.p, 1.4); showCard(route); speak(); return; }
-  state.busy = true; card.classList.add('moving'); speak();
+  if (target === cur) { const f = route === 'now' && state.blocked ? focusBlocked() : focusOf(ROUTE[route][cur]); flyTo(f.t, f.p, 1.4); setSheet(true); showCard(route); speak(); return; }
+  state.busy = true; card.classList.add('moving'); setSheet(false); speak();
   if (route === 'shen') setFace(resAObj, 'happy');
   if (route === 'now' && state.blocked) {
     const back = toPath(blockedPath.pts.slice().reverse());
@@ -3348,7 +3391,7 @@ async function goStep(route, target) {
     umbFlip = 1.2;
   }
   state.busy = false; card.classList.remove('moving');
-  refreshTags(); showCard(route); speak();
+  refreshTags(); setSheet(true); showCard(route); speak();
   arrive(route);
 }
 /* a stop you walk straight through (jumping ahead) still sounds, and the site still breaks ground */
@@ -3386,8 +3429,8 @@ function arrive(route) {
     if (state.doneRound !== state.round) { state.doneRound = state.round; sessionDone++; }
     celebrate(); riseTowers();
     const ch = markDone('icity-shen');
-    if (ch && ch.toNew.length) { toast(`🎉 薩摩耶陪你走到完工！多了 <b>1 棟新大樓</b>（已更新 ${fmtN(PROG.done)} 棟）`); RENEW.flash(ch.toNew[ch.toNew.length - 1]); }
-    else toast('🎉 薩摩耶陪你走到完工了！這一輪也會計入本站的更新進度');
+    if (ch && ch.toNew.length) { toast(`🎉 <span class="wide">薩摩耶陪你走到</span>完工！多了 <b>1 棟新大樓</b>（已更新 ${fmtN(PROG.done)} 棟）`); RENEW.flash(ch.toNew[ch.toNew.length - 1]); }
+    else toast('🎉 <span class="wide">薩摩耶陪你走到</span>完工了！這一輪也會計入<span class="wide">本站的</span>更新進度');
   }
 }
 function groundbreak() {
@@ -3407,7 +3450,7 @@ function celebrate() { fwUntil = clock.elapsedTime + 4.5; fwNext = 0.6; WALK.dog
 
 async function nextRound() {
   if (state.busy) return;
-  state.busy = true; card.classList.add('moving'); speak();
+  state.busy = true; card.classList.add('moving'); setSheet(false); speak();
   GC.event('action-next-round', '送下一批住戶上島');
   AUDIO.sparkle();
   loopBoost = 1;
@@ -3430,7 +3473,7 @@ async function nextRound() {
   WALK.dog.hop = 1;
   await tween(0.5, k => { resAObj.scale.setScalar(1.25 * Math.max(0.0001, easeBack(k))); });
   state.busy = false; card.classList.remove('moving');
-  refreshTags(); showCard('shen'); speak();
+  refreshTags(); setSheet(true); showCard('shen'); speak();
 }
 const tweens = [];
 function tween(dur, fn) { return new Promise(res => tweens.push({ t: 0, dur, fn, res })); }
@@ -3441,12 +3484,12 @@ function openRoute(route) {
   setView(route);
   const f = route === 'now' && state.blocked ? focusBlocked() : focusOf(ROUTE[route][state.step[route]]);
   flyTo(f.t, f.p, 1.7);
-  showCard(route);
+  setSheet(true); showCard(route);
 }
 function openPool() {
   if (state.busy) return;
   hideIntro(); setView('pool');
-  const f = focusOf('pool'); flyTo(f.t, f.p, 1.6); showCard('pool');
+  const f = focusOf('pool'); flyTo(f.t, f.p, 1.6); setSheet(true); showCard('pool');
 }
 function goOverview() {
   hideIntro(); setView('overview'); hideCard();
@@ -3489,6 +3532,7 @@ document.addEventListener('click', (e) => {
   if (a === 'close-modal') return modal.classList.remove('show');
   if (a === 'policy') return openPolicy();
   if (a === 'sound') return AUDIO.toggle();
+  if (a === 'sheet') { if (!grabSwiped) setSheet(!sheetOpen); grabSwiped = false; return; }
   if (a === 'shen' || a === 'now' || a === 'overview' || a === 'next' || a === 'prev' || a === 'round') AUDIO.tap();
   if (a === 'close-policy') return policy.classList.remove('show');
   if (a === 'shen' || a === 'now' || a === 'overview') {
@@ -3527,7 +3571,11 @@ canvas.addEventListener('pointerup', (e) => {
   if (hit) { const id = hit.object.userData.island; GC.event('click-island-' + id, '點島嶼：' + LABEL[id]); onIsland(id); }
 });
 canvas.addEventListener('pointermove', (e) => {
-  if (e.buttons) return;
+  if (e.buttons) {
+    // a real drag or pinch (not a tap) clears the view: the sheet folds away and fades until the finger lifts
+    if (interacting && cardOn && isNarrow() && down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) { if (sheetOpen) setSheet(false); card.classList.add('fade'); }
+    return;
+  }
   ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   canvas.style.cursor = ray.intersectObjects(pickables, false).length ? 'pointer' : '';
@@ -3543,6 +3591,12 @@ const AUDIO = {
   // trims measured so that every effect lands at about the same loudness on small speakers
   trim: { bark: 4.9, home: 1.7, s1: 2.1, s2: 2.7, s3: 2.8, s4: 3.6, s5: 0.6, s6: 2.9, c1: 2.9, c2: 2.1, c3: 3.4, c4: 14.5, c5: 16, blocked: 1.5, groundbreak: 16, sparkle: 5.9, chime: 2 },
   level(name, fn) { this.k = this.trim[name] ?? 1; fn(); this.k = 1; },
+  // why the page is out of sight right now; while this has anything in it, every sound stays off.
+  // The <audio> element plays by itself and the frame loop stops along with the page, so this
+  // has to stop it directly instead of leaving it to the fade in update()
+  away: new Set(), lastTick: 0,
+  leave(why) { this.away.add(why); this.musicVol = 0; if (this.music) this.music.pause(); if (this.ctx) this.ctx.suspend().catch(() => {}); },
+  back(why) { this.away.delete(why); if (!this.away.size && this.ctx) this.ctx.resume().catch(() => {}); },
   start() {
     if (this.ctx) return;
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -3594,8 +3648,10 @@ const AUDIO = {
     GC.event(this.on ? 'action-sound-on' : 'action-sound-off', this.on ? '開啟聲音' : '關閉聲音');
   },
   update(dt) {
+    this.lastTick = performance.now();
+    if (this.away.has('frames')) this.back('frames');
     if (!this.ctx || !this.music) return;
-    const goal = this.on && !this.musicMissing && !document.hidden ? this.musicTarget : 0;
+    const goal = this.on && !this.musicMissing && !this.away.size ? this.musicTarget : 0;
     this.musicVol += clamp(goal - this.musicVol, -dt / 1.2, dt / 1.2);
     const a = this.music;
     if (this.musicVol > 0.005) { a.volume = clamp(this.musicVol, 0, 1); if (a.paused) a.play().catch(() => {}); }
@@ -3682,7 +3738,19 @@ function soundBtn() { const b = $('#snd'); if (!b) return; b.textContent = AUDIO
 soundBtn();
 // the first tap/key anywhere unlocks audio (browsers require a gesture)
 if (window.__actx) AUDIO.start(); else window.__onUnlock = () => AUDIO.start();
-document.addEventListener('visibilitychange', () => { if (!AUDIO.ctx) return; if (document.hidden) AUDIO.ctx.suspend().catch(() => {}); else if (AUDIO.on) AUDIO.ctx.resume().catch(() => {}); });
+// In-app browsers (LINE and the like) do not all report leaving the same way, so listen to every signal
+document.addEventListener('visibilitychange', () => { if (document.hidden) AUDIO.leave('hidden'); else { AUDIO.back('hidden'); AUDIO.back('blur'); } });
+addEventListener('pagehide', () => AUDIO.leave('page'));
+addEventListener('pageshow', () => AUDIO.back('page'));
+document.addEventListener('freeze', () => AUDIO.leave('page'));
+document.addEventListener('resume', () => AUDIO.back('page'));
+if (matchMedia('(pointer: coarse)').matches) {   // on a computer the page can stay visible beside another window
+  addEventListener('blur', () => AUDIO.leave('blur'));
+  addEventListener('focus', () => AUDIO.back('blur'));
+  addEventListener('pointerdown', () => AUDIO.back('blur'), true);
+}
+// last resort for webviews that report nothing: frames stop when the page is off screen
+setInterval(() => { if (AUDIO.lastTick && performance.now() - AUDIO.lastTick > 2000) AUDIO.leave('frames'); }, 500);
 
 /* =========================================================
    Atmosphere & loop
@@ -3719,7 +3787,7 @@ let nextStrike = 2.5;
 const DPR_MAX = Math.min(devicePixelRatio, innerWidth <= 720 ? 1.5 : 2);
 let dprNow = DPR_MAX, slowFor = 0, idleFor = 0, emaDt = 1 / 60, interacting = false;
 controls.addEventListener('start', () => { interacting = true; });
-controls.addEventListener('end', () => { interacting = false; });
+controls.addEventListener('end', () => { interacting = false; card.classList.remove('fade'); });
 const setDpr = (d) => { dprNow = d; renderer.setPixelRatio(d); renderer.setSize(innerWidth, innerHeight, false); };
 function adaptQuality(raw) {
   emaDt += (Math.min(raw, 0.25) - emaDt) * 0.1;
