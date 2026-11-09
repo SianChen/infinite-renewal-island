@@ -219,7 +219,8 @@ body[data-mode=now] .seg button[aria-pressed=true].c{background:#4b5868;color:#f
 .pchip{display:flex;align-items:center;gap:0}
 .pchip b{font-weight:900;color:var(--orange-deep)}
 .pchip .cb{display:inline-flex;width:84px;height:7px;margin:0 9px;border-radius:4px;overflow:hidden;background:#8f8b84;flex:none}
-.pchip .cb i{display:block;height:100%}.pchip .cb .d{background:var(--orange)}.pchip .cb .c{background:#5f9e72}
+.pchip .cb i,.pmini .cb i{display:block;height:100%}.pchip .cb .d,.pmini .cb .d{background:var(--orange)}.pchip .cb .c,.pmini .cb .c{background:#5f9e72}
+.pmini,.plabel{display:none}
 .toast{position:fixed;left:50%;top:84px;z-index:7;transform:translate(-50%,-12px);opacity:0;pointer-events:none;max-width:calc(100vw - 32px);padding:10px 18px;border-radius:999px;background:#1e2a36;color:#fff;font-size:14px;font-weight:700;box-shadow:0 10px 28px rgba(20,40,60,.3);transition:opacity .35s,transform .35s;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast b{color:#ffcf8a}
@@ -347,6 +348,14 @@ body[data-mode=overview] .foot .hint{display:none}
   .toast .wide{display:none}
   .tag.basin{font-size:11px}
   .pchip{display:none}
+  /* inside the top bar: the numbers use the empty space beside the title, the bar runs along the pill's bottom padding */
+  .brand{position:relative;gap:8px;min-height:54px}
+  .brand .visits.care{padding:1px 6px}
+  .pmini{display:flex;flex:1 0 calc(100% - 96px);min-width:0;align-items:center;justify-content:flex-end;gap:5px;overflow:hidden;font-size:10.5px;font-weight:700;letter-spacing:0;color:var(--ink-2)}
+  body[data-mode=now] .pmini{color:var(--storm-mute)}
+  .plabel{display:block;flex:1 1 0;min-width:0;overflow:hidden;text-align:right;font-size:10px;font-weight:900;letter-spacing:0;color:var(--orange-deep)}
+  #care[hidden]+.plabel,body[data-mode=now] .plabel{display:none}
+  .pmini .cb{position:absolute;left:26px;right:26px;bottom:1px;display:flex;height:3px;border-radius:2px;overflow:hidden;background:#8f8b84}
   .intro-card{padding:24px 18px 14px}
   .intro h2{font-size:26px}
   .intro-actions{grid-template-columns:1fr}
@@ -356,6 +365,9 @@ body[data-mode=overview] .foot .hint{display:none}
   .pcard{width:200px;font-size:12px}
   .ov-doc{display:none}
 }
+@media (max-width:389px){.pmini .o{display:none}}
+@media (max-width:359px){.plabel{display:none}}
+@media (max-width:349px){.pmini>span:not(.cb){display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -369,7 +381,7 @@ body[data-mode=overview] .foot .hint{display:none}
   <div class="brand">
     <div class="logo">∞</div>
     <div>
-      <h1>無限都更島 <span class="visits" id="visits" hidden>累計 <b>—</b> 位訪客</span><span class="visits care" id="care" hidden>關心都更的人數 <b>—</b></span></h1>
+      <h1>無限都更島 <span class="pmini" id="pmini"></span><span class="visits" id="visits" hidden>累計 <b>—</b> 位訪客</span><span class="visits care" id="care" hidden>關心都更的人數 <b>—</b></span><span class="plabel">都更進度</span></h1>
       <p>同一棟老公寓，兩條路線，兩種結局</p>
     </div>
     <button class="doc" data-act="policy" aria-label="無限都更政策詳述" title="無限都更政策詳述"><span aria-hidden="true">📄</span><em>政策詳述</em></button>
@@ -2199,7 +2211,7 @@ function basinY(x, z) {
   const plain = smooth(1.0, 1.08, e) * (1 - rise) * (fbm(x * 0.15, z * 0.15, 2) - 0.45) * 0.4;
   return shore + h + plain;
 }
-const RENEW = { cap: 160, slots: [], dirty: false };
+const RENEW = { cap: 0, slots: [], dirty: false };
 const CROWD = { cap: 80, meshes: [], shown: 0 };
 {
   /* ---- terrain: polar grid in ellipse space, dense near the shore, sparse at the horizon ---- */
@@ -2270,7 +2282,8 @@ const CROWD = { cap: 80, meshes: [], shown: 0 };
   }
   const renewFocus = fromEll(1.08, -2.8);         // north-west shore: the backdrop of the 沈伯洋 loop
   const westish = cand.filter(o => stormAt(o.x, o.z) < 0.12 && angDist(o.th, TH101) > 0.25).sort((a, b) => Math.hypot(a.x - renewFocus[0], a.z - renewFocus[1]) - Math.hypot(b.x - renewFocus[0], b.z - renewFocus[1]));
-  const slots = westish.slice(0, RENEW.cap);
+  // the first 160 keep the shared random draws they always had; the rest of this shore queues behind them
+  const slots = westish.slice(0, 160), queued = westish.slice(160);
   const slotSet = new Set(slots);
   const xinyi = cand.filter(o => !slotSet.has(o) && angDist(o.th, TH101) < 0.16);
   const xSet = new Set(xinyi);
@@ -2321,41 +2334,71 @@ const CROWD = { cap: 80, meshes: [], shown: 0 };
     newMat(newFacadeTex({ W: 128, aspect: 2.4, floors: 8, cols: 3, accent: '#e9b949', wood: '#b97f50', base: '#fdfbf6', wallGlow: 40 })),
   ];
   const NEW_TOP = M('#93c26f');
-  const siteTex = (() => {
-    const [c, g] = canvasEl(128, 256);
-    g.fillStyle = '#b5b1a8'; g.fillRect(0, 0, 128, 256);
-    for (let f = 0; f < 6; f++) { const y = 256 - (f + 1) * 42; g.fillStyle = '#d4d0c7'; g.fillRect(0, y + 36, 128, 6); g.fillStyle = '#4d4a45'; for (let k = 0; k < 3; k++) g.fillRect(8 + k * 40, y + 6, 30, 26); }
-    g.fillStyle = 'rgba(62,136,82,.8)'; g.fillRect(0, 0, 128, 150);
-    g.strokeStyle = 'rgba(28,78,44,.45)'; g.lineWidth = 1; for (let x = -150; x < 128; x += 8) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 150, 150); g.stroke(); }
-    g.strokeStyle = '#e0703f'; g.lineWidth = 3; for (let x = 4; x < 128; x += 31) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 256); g.stroke(); }
-    for (let y = 10; y < 256; y += 42) { g.beginPath(); g.moveTo(0, y); g.lineTo(128, y); g.stroke(); }
+  /* half-built tower: the lower floors are already the finished facade, the floors above are bare
+     concrete frame with rebar sticking out of the columns. Height 1 = the finished tower. */
+  const slabTex = (() => {
+    const [c, g] = canvasEl(64, 64);
+    g.fillStyle = '#d6d0c3'; g.fillRect(0, 0, 64, 64);
+    g.fillStyle = '#9a5a36'; for (let k = 6; k < 64; k += 13) { g.fillRect(k, 0, 3, 64); g.fillRect(0, k, 64, 3); }
     return toTex(c);
   })();
-  const SITE = texMat(siteTex), SITE_TOP = M('#a8a49b');
+  const CONCRETE = M('#c9c3b6'), REBAR = M('#b4552a'), SLAB = texMat(slabTex);
+  const siteGeo = (() => {
+    // always the four sides; `ends` adds the top (1) or top and bottom (2), leaving out faces nobody sees
+    const bar = (x, y, z, sx, sy, sz, ends = 1) => {
+      const g = new THREE.BoxGeometry(sx, sy, sz).translate(x, y + sy / 2, z), keep = [1, 1, ends > 0, ends > 1, 1, 1];
+      g.setIndex([...g.index.array].filter((_, n) => keep[Math.floor(n / 6)]));
+      return g;
+    };
+    const F = 1 / 8, DONE = 3 * F;
+    const lower = bar(0, 0, 0, 1, DONE, 1, 0), uv = lower.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * DONE);   // only the facade's bottom floors, so they match the finished tower
+    const frame = [bar(0, DONE, 0, 0.36, F, 0.36, 0)], rods = [], stub = [0.7, 0.4, 0.6, 0.5, 0.7, 0.35, 0.55, 0.65];
+    [[-.44, -.44], [0, -.44], [.44, -.44], [-.44, 0], [.44, 0], [-.44, .44], [0, .44], [.44, .44]].forEach(([x, z], i) => {
+      const top = DONE + F + stub[i] * F;
+      frame.push(bar(x, DONE, z, 0.11, F, 0.11, 0), bar(x, DONE + F, z, 0.11, stub[i] * F, 0.11));
+      [[-0.032, -0.032], [0.032, 0.032]].forEach(([a, b], j) => rods.push(bar(x + a, top, z + b, 0.042, (0.5 + ((i * 3 + j) % 4) * 0.14) * F, 0.042)));
+    });
+    const slabs = [bar(0, DONE - 0.012, 0, 1.03, 0.024, 1.03, 2), bar(0, DONE + F - 0.012, 0, 1.03, 0.024, 1.03, 2)];
+    return mergeGeometries([lower, mergeGeometries(frame), mergeGeometries(rods), mergeGeometries(slabs)], true);
+  })();
   RENEW.slots = slots.map((o, i) => ({ ...o, oi: i, v: i % 2, newH: rr(2.8, 4.4), trim: pick(['#e0703f', '#e9b949', '#e0703f']), rot: olds[i].rot, st: 0, k: 0, delay: 0, anim: false, crane: i % 3 === 1, jib: rr(0, 6.28) }));
+  // the rest of the shore: its own random stream, because the shared one also places all later scenery
+  const rs = mulberry32(20261129), oldAt = new Map(rest.map((o, i) => [o, slots.length + i]));
+  for (const o of queued) { const i = RENEW.slots.length, oi = oldAt.get(o); RENEW.slots.push({ ...o, oi, v: i % 2, newH: 2.8 + 1.6 * rs(), trim: ['#e0703f', '#e9b949', '#e0703f'][Math.floor(rs() * 3)], rot: olds[oi].rot, st: 0, k: 0, delay: 0, anim: false, crane: i % 3 === 1, jib: rs() * 6.28 }); }
   RENEW.cap = RENEW.slots.length;
   RENEW.center = new V3(...(() => { const [x, z] = fromEll(0.86, -2.9); return [x, 2.2, z]; })());
   const nByV = [0, 1].map(v => RENEW.slots.filter(s => s.v === v));
   const nBodies = nByV.map((L, v) => { L.forEach((s, i) => { s.bi = i; }); const m = new THREE.InstancedMesh(UNIT, [NEW_MATS[v], NEW_MATS[v], NEW_TOP, NEW_TOP, NEW_MATS[v], NEW_MATS[v]], Math.max(1, L.length)); m.count = L.length; return m; });
   const nTrim = new THREE.InstancedMesh(UNIT, std(), Math.max(1, RENEW.cap));
   const nTree = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), std(), Math.max(1, RENEW.cap));
-  const cBody = new THREE.InstancedMesh(UNIT, [SITE, SITE, SITE_TOP, SITE_TOP, SITE, SITE], Math.max(1, RENEW.cap));
+  const cSite = [0, 1].map(v => new THREE.InstancedMesh(siteGeo, [NEW_MATS[v], CONCRETE, REBAR, SLAB], Math.max(1, RENEW.cap)));
   const cMast = new THREE.InstancedMesh(UNIT, M('#e9b949'), Math.max(1, RENEW.cap)), cJib = new THREE.InstancedMesh(UNIT, M('#e9b949'), Math.max(1, RENEW.cap));
-  RENEW.slots.forEach((sl, i) => { nTrim.setColorAt(i, new THREE.Color(sl.trim)); nTree.setColorAt(i, new THREE.Color(pick(['#7fb069', '#8cc46e', '#6aa65a']))); });
-  const RMESH = [...nBodies, nTrim, nTree, cBody, cMast, cJib];
-  for (const m of RMESH) { m.castShadow = true; m.receiveShadow = true; scene.add(m); }
+  RENEW.slots.forEach((sl, i) => { const leaf = ['#7fb069', '#8cc46e', '#6aa65a']; nTrim.setColorAt(i, new THREE.Color(sl.trim)); nTree.setColorAt(i, new THREE.Color(i < slots.length ? pick(leaf) : leaf[Math.floor(rs() * 3)])); });
+  const RMESH = [...nBodies, nTrim, nTree, ...cSite, cMast, cJib];
+  // their draw counts change as the queue moves, which a cached bounding sphere can't follow
+  for (const m of RMESH) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; scene.add(m); }
   const HIDE = 0.0001;
+  /* construction sites are packed into the first instances: only the ones on screen cost anything, however long the queue */
+  const packSites = () => {
+    const n = [0, 0]; let c = 0;
+    for (const sl of RENEW.slots) {
+      // a finished block still waiting for its turn to rise stays a site
+      if (sl.st === 0 || (sl.st === 2 && sl.k > 0)) continue;
+      q.setFromAxisAngle(UP, sl.rot);
+      m4.compose(put(0, 0, 0, sl).clone(), q, sc.set(sl.w * 0.92, sl.newH, sl.d * 0.92)); cSite[sl.v].setMatrixAt(n[sl.v]++, m4);
+      if (!sl.crane) continue;
+      const mh = sl.newH * 0.55 + 1.3, jq = new THREE.Quaternion().setFromAxisAngle(UP, sl.rot + sl.jib);
+      m4.compose(put(sl.w * 0.55, mh / 2, -sl.d * 0.3, sl).clone(), q, sc.set(0.09, mh, 0.09)); cMast.setMatrixAt(c, m4);
+      m4.compose(put(sl.w * 0.55, mh, -sl.d * 0.3, sl).clone().add(new V3(Math.cos(sl.rot + sl.jib) * 0.45, 0, -Math.sin(sl.rot + sl.jib) * 0.45)), jq, sc.set(1.5, 0.07, 0.08)); cJib.setMatrixAt(c++, m4);
+    }
+    cSite.forEach((m, v) => { m.count = n[v]; });
+    cMast.count = cJib.count = c;
+  };
   RENEW.write = (i) => {
     const sl = RENEW.slots[i], rising = sl.st === 2 && sl.k > 0, k = clamp(sl.k, 0, 1);
     writeOld(sl.oi, sl.st === 0 ? 1 : 0);
     q.setFromAxisAngle(UP, sl.rot);
-    // construction site (also shown while a finished block waits for its turn to rise)
-    const site = sl.st === 1 || (sl.st === 2 && !rising), ch = sl.newH * 0.55, cs = site ? 1 : HIDE;
-    m4.compose(put(0, ch / 2, 0, sl).clone(), q, sc.set(sl.w * 0.9 * cs, ch * cs, sl.d * 0.9 * cs)); cBody.setMatrixAt(i, m4);
-    const cr = site && sl.crane ? 1 : HIDE, mh = ch + 1.3;
-    m4.compose(put(sl.w * 0.55, mh / 2, -sl.d * 0.3, sl).clone(), q, sc.set(0.09 * cr, mh * cr, 0.09 * cr)); cMast.setMatrixAt(i, m4);
-    const jq = new THREE.Quaternion().setFromAxisAngle(UP, sl.rot + sl.jib);
-    m4.compose(put(sl.w * 0.55, mh, -sl.d * 0.3, sl).clone().add(new V3(Math.cos(sl.rot + sl.jib) * 0.45, 0, -Math.sin(sl.rot + sl.jib) * 0.45)), jq, sc.set(1.5 * cr, 0.07 * cr, 0.08 * cr)); cJib.setMatrixAt(i, m4);
     // the new block grows out of the site
     const on = rising ? 1 : HIDE, nh = sl.newH * (0.55 + 0.45 * easeBack(k));
     m4.compose(put(0, nh / 2, 0, sl).clone(), q, sc.set(sl.w * 0.92 * on, nh * on, sl.d * 0.92 * on)); nBodies[sl.v].setMatrixAt(sl.bi, m4);
@@ -2373,6 +2416,11 @@ const CROWD = { cap: 80, meshes: [], shown: 0 };
       else { if (t === 1) ch.toBuild.push(i); sl.st = t; sl.k = 0; sl.anim = false; }
       RENEW.write(i);
     });
+    // renewed slots are always the first ones in the queue, so anything past them needn't be drawn
+    const renewed = nByV.map(L => L.filter(s => s.st === 2).length);
+    nBodies.forEach((m, v) => { m.count = renewed[v]; });
+    nTrim.count = nTree.count = renewed[0] + renewed[1];
+    RENEW.dirty = true;
     RENEW.busy = true;
     return ch;
   };
@@ -2391,7 +2439,7 @@ const CROWD = { cap: 80, meshes: [], shown: 0 };
       if (sl.k >= 1) sl.anim = false;
     });
     if (RENEW.glowT > 0) { any = true; RENEW.glowT -= dt; const a = Math.min(1, RENEW.glowT / 0.8); glow.material.opacity = 0.85 * a; glow.scale.setScalar(3.2 + Math.sin(RENEW.glowT * 6) * 0.6); if (RENEW.glowT <= 0) glow.visible = false; }
-    if (RENEW.dirty) { for (const m of [...oBodies, oShed, oTank, oSign, ...RMESH]) m.instanceMatrix.needsUpdate = true; RENEW.dirty = false; }
+    if (RENEW.dirty) { packSites(); for (const m of [...oBodies, oShed, oTank, oSign, ...RMESH]) m.instanceMatrix.needsUpdate = true; RENEW.dirty = false; }
     RENEW.busy = any;
   };
   RENEW.slots.forEach((_, i) => RENEW.write(i));
@@ -2960,10 +3008,12 @@ function updateChip() {
   const chip = $('#pchip'), v = state.view;
   const show = v === 'shen' || v === 'now' || v === 'pool';
   chip.classList.toggle('show', show);
-  if (!show || PROG.done == null) return;
-  const cap = RENEW.cap || 1;
+  if (PROG.done == null) return;
+  const cap = RENEW.cap || 1, bar = `<span class="cb"><i class="d" style="width:${(PROG.done / cap * 100).toFixed(1)}%"></i><i class="c" style="width:${(PROG.build / cap * 100).toFixed(1)}%"></i></span>`;
+  $('#pmini').innerHTML = v === 'now' ? '<span>⛈ 完工 0 棟</span>' : `${bar}<span>✔${fmtN(PROG.done)}</span><span>🏗${fmtN(PROG.build)}</span><span class="o">🏚${fmtN(PROG.old)}</span>`;
+  if (!show) return;
   chip.innerHTML = v === 'now' ? `⛈ 完工 0 棟・${fmtN(PROG.nTot)} 位住戶卡在斷橋`
-    : `<b>都更進度</b><span class="cb"><i class="d" style="width:${(PROG.done / cap * 100).toFixed(1)}%"></i><i class="c" style="width:${(PROG.build / cap * 100).toFixed(1)}%"></i></span>✔ 已更新 ${fmtN(PROG.done)}・🏗 施工中 ${fmtN(PROG.build)}・🏚 待更新 ${fmtN(PROG.old)}`;
+    : `<b>都更進度</b>${bar}✔ 已更新 ${fmtN(PROG.done)}・🏗 施工中 ${fmtN(PROG.build)}・🏚 待更新 ${fmtN(PROG.old)}`;
 }
 /* little notes that tell you what your own visit just changed */
 const toastEl = $('#toast');
